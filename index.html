@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Introduction to Computer Vision with OpenCV | Alphagen Learning</title>
+
+  <!-- Google Fonts: Poppins & Fira Code -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;600;700&family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome & Canvas Confetti CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Poppins', 'sans-serif'],
+            mono: ['Fira Code', 'monospace']
+          },
+          colors: {
+            alphagen: {
+              purple: '#5E48C4',
+              purpleDark: '#4A3AAD',
+              purpleMid: '#7B6ED4',
+              purplePale: '#EAE7FE',
+              purpleGhost: '#F5F4FF',
+              yellow: '#FFD071',
+              yellowDark: '#E6B84A',
+              yellowPale: '#FFF3CC',
+              nearBlack: '#1A1A1A',
+              darkGrey: '#404048',
+              midGrey: '#888896',
+              lightGrey: '#F2F2F4',
+              cyan: '#59E4FB',
+              cyanDark: '#055F6E',
+              cyanPale: '#E0FAFE',
+              coral: '#ED5661',
+              coralDark: '#993040',
+              coralPale: '#FFF0F1'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      margin: 0;
+      padding: 12px;
+      background-color: #0f081d;
+      font-family: 'Poppins', sans-serif;
+      color: #1A1A1A;
+      overflow-x: hidden;
+      user-select: none;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .stage-wrapper {
+      width: 100%;
+      max-width: 1280px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .slide-stage {
+      width: 1280px;
+      height: 720px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+      box-sizing: border-box;
+      background-color: #ffffff;
+      border-radius: 28px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      border: 1px solid #EAE7FE;
+      transform-origin: top center;
+    }
+
+    .slide-panel {
+      width: 1280px;
+      height: 720px;
+      padding: 68px 44px 20px 44px;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+      box-sizing: border-box;
+      background: #ffffff;
+    }
+
+    .slide-panel.active {
+      display: flex;
+      animation: slideInSmooth 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideInSmooth {
+      from { opacity: 0; transform: scale(0.985) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .btn-interactive {
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .btn-interactive:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 10px 20px -5px rgba(94, 72, 196, 0.3);
+    }
+    .btn-interactive:active {
+      transform: translateY(1px) scale(0.98);
+    }
+
+    .nav-bar {
+      width: 1280px;
+      margin: 12px auto 8px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 16px;
+      transform-origin: top center;
+    }
+
+    .nav-btn {
+      background: #2A1C68;
+      color: #FFD071;
+      border: 2px solid #5E48C4;
+      padding: 10px 24px;
+      border-radius: 14px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: #5E48C4;
+      color: #ffffff;
+      transform: scale(1.04);
+    }
+    .nav-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .nav-btn.finish-btn {
+      background: #FFD071;
+      color: #1A1A1A;
+      border-color: #FFD071;
+      animation: pulseFinish 1.6s infinite alternate;
+    }
+
+    @keyframes pulseFinish {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 208, 113, 0.6); }
+      100% { transform: scale(1.05); box-shadow: 0 0 16px 4px rgba(255, 208, 113, 0.4); }
+    }
+
+    .dot-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #2A1C68;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .dot-indicator.active {
+      background: #FFD071;
+      width: 24px;
+      border-radius: 10px;
+    }
+
+    .spark-wavy-underline {
+      position: relative;
+      display: inline-block;
+      color: #5E48C4;
+    }
+    .spark-wavy-underline::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: -6px;
+      width: 100%;
+      height: 12px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 4' preserveAspectRatio='none'%3E%3Cpath d='M0 2 Q 5 0, 10 2 T 20 2' fill='none' stroke='%23FFD071' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: repeat-x;
+      background-size: 20px 12px;
+    }
+
+    .quiz-option {
+      background: #ffffff;
+      border: 2px solid #EAE7FE;
+      border-radius: 16px;
+      padding: 12px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1A1A1A;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      text-align: left;
+    }
+    .quiz-option:hover {
+      border-color: #5E48C4;
+      background: #F5F4FF;
+      transform: translateX(4px);
+    }
+    .quiz-option.selected-correct {
+      background: #f0fdf4 !important;
+      border-color: #22c55e !important;
+      color: #14532d !important;
+    }
+    .quiz-option.selected-wrong {
+      background: #FFF0F1 !important;
+      border-color: #ED5661 !important;
+      color: #993040 !important;
+    }
+
+    .checkbox-card {
+      background: #ffffff;
+      border: 2px solid #EAE7FE;
+      border-radius: 16px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .checkbox-card:hover {
+      border-color: #5E48C4;
+      background: #F5F4FF;
+    }
+    .checkbox-card.checked {
+      background: #f0fdf4;
+      border-color: #22c55e;
+    }
+    .checkbox-box {
+      width: 24px;
+      height: 24px;
+      border: 2px solid #5E48C4;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-size: 12px;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .checkbox-card.checked .checkbox-box {
+      background: #22c55e;
+      border-color: #22c55e;
+    }
+  </style>
+</head>
+
+<body>
+<div class="stage-wrapper">
+
+  <!-- TOP ALPHAGEN BRANDING BAR -->
+  <header class="w-full bg-alphagen-purpleDark px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-white shadow-md rounded-2xl mb-3 border border-alphagen-purpleMid">
+    <div class="flex items-center gap-3">
+      <div class="bg-alphagen-yellow text-alphagen-nearBlack px-4 py-2 rounded-xl font-extrabold text-xs md:text-sm shadow-sm flex items-center gap-2">
+        <span class="tracking-wide">ALPHAGEN LEARNING</span>
+      </div>
+      <span class="font-extrabold text-base md:text-lg tracking-tight text-white">
+        Introduction to Computer Vision with OpenCV
+      </span>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <button onclick="toggleAudio()" id="top-audio-btn" class="bg-alphagen-purple hover:bg-alphagen-purpleMid text-white p-2 rounded-lg transition-all" title="Toggle Sound">
+        <i class="fa-solid fa-volume-high text-base" id="sound-icon"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- 1280x720 FIXED PRESENTATION STAGE -->
+  <div class="slide-stage">
+
+    <!-- Header Navigation Bar inside Stage -->
+    <header class="w-full bg-white border-b border-alphagen-purplePale px-6 py-2.5 flex items-center justify-between relative z-50">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-alphagen-purple flex items-center justify-center text-white text-xl shadow-md shadow-alphagen-purple/20">
+          <i class="fa-solid fa-eye"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-base text-alphagen-purple tracking-tight">Computer Vision &amp; OpenCV Basics</h1>
+          <p class="text-xs font-semibold text-alphagen-yellowDark">Installation, Reading, Showing &amp; Writing Images</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2" id="header-dots-container"></div>
+
+      <div class="flex items-center gap-3">
+        <span id="slide-counter-pill" class="text-xs font-bold text-alphagen-purple bg-alphagen-purpleGhost px-3.5 py-1.5 rounded-full border border-alphagen-purplePale">
+          Slide 1 / 7
+        </span>
+
+        <select id="slide-dropdown" onchange="goToSlide(parseInt(this.value))" class="text-xs font-bold text-alphagen-nearBlack bg-alphagen-lightGrey hover:bg-slate-200 border border-slate-200 px-3 py-1.5 rounded-xl cursor-pointer focus:outline-none focus:border-alphagen-purple transition">
+          <option value="1">1. Welcome Screen</option>
+          <option value="2">2. Teaching Computers to "See"</option>
+          <option value="3">3. Today's Learning Agenda</option>
+          <option value="4">4. Installing OpenCV (Mac &amp; Windows)</option>
+          <option value="5">5. Read &amp; Show an Image</option>
+          <option value="6">6. Write &amp; Save an Image (+ Paths)</option>
+          <option value="7">7. Knowledge Check &amp; Celebrate!</option>
+        </select>
+
+        <button onclick="toggleAudio()" id="audio-btn" class="w-9 h-9 rounded-xl bg-alphagen-purpleGhost hover:bg-alphagen-purplePale text-alphagen-purple border border-alphagen-purplePale flex items-center justify-center text-sm transition btn-interactive" title="Toggle Sound">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- ================= SLIDE 1: HOMEPAGE (CLEAN TITLE ONLY) ================= -->
+    <div id="slide-1" class="slide-panel active justify-center items-center text-center">
+      <div class="inline-flex items-center gap-2 bg-alphagen-purpleGhost border-2 border-alphagen-purplePale text-alphagen-purple text-xs font-extrabold px-6 py-2 rounded-full mb-6 tracking-wider uppercase">
+        <i class="fa-solid fa-eye text-alphagen-yellowDark"></i> AI &amp; COMPUTER VISION
+      </div>
+
+      <h1 class="text-5xl md:text-6xl font-extrabold text-alphagen-nearBlack mb-10 tracking-tight leading-tight max-w-4xl">
+        Introduction to <span class="spark-wavy-underline">Computer Vision</span>
+      </h1>
+
+      <button onclick="nextSlide(); playSound('pop')" class="bg-alphagen-yellow hover:bg-alphagen-yellowDark text-alphagen-nearBlack font-extrabold text-xl px-12 py-5 rounded-2xl shadow-xl btn-interactive flex items-center gap-3">
+        <span>Start Exploring</span>
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+
+    <!-- ================= SLIDE 2: TEACHING COMPUTERS TO "SEE" ================= -->
+    <div id="slide-2" class="slide-panel bg-white justify-between">
+      <div>
+        <span class="text-xs uppercase font-extrabold tracking-wider text-alphagen-purple bg-alphagen-purpleGhost px-4 py-1.5 rounded-md border border-alphagen-purplePale">Core Concept</span>
+        <h2 class="text-3xl font-extrabold text-alphagen-purple mt-2">What is Computer Vision?</h2>
+      </div>
+
+      <div class="grid grid-cols-12 gap-6 my-auto items-stretch">
+        <!-- Definition & Core Analogy (7 cols) -->
+        <div class="col-span-7 bg-alphagen-purpleGhost border-2 border-alphagen-purplePale rounded-3xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-11 h-11 rounded-2xl bg-alphagen-purple text-white flex items-center justify-center text-xl shadow">
+                <i class="fa-solid fa-brain"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-lg text-alphagen-purple">Teaching Computers to "See"</h3>
+                <span class="text-xs font-semibold text-alphagen-darkGrey">Human Eyes + Brain = Camera + Python Code</span>
+              </div>
+            </div>
+
+            <p class="text-sm text-alphagen-nearBlack font-medium leading-relaxed mb-4">
+              <strong>Computer Vision (CV)</strong> is a branch of Artificial Intelligence that enables computers and cameras to look at digital images or videos, understand what is inside them, and take smart actions!
+            </p>
+
+            <div class="grid grid-cols-3 gap-3 text-xs">
+              <div class="bg-white p-3 rounded-2xl border border-alphagen-purplePale shadow-sm text-center">
+                <div class="text-2xl mb-1">📱</div>
+                <strong class="text-alphagen-purple block">Face Unlock</strong>
+                <span class="text-alphagen-darkGrey text-[11px]">Phones recognize your face instantly</span>
+              </div>
+              <div class="bg-white p-3 rounded-2xl border border-alphagen-purplePale shadow-sm text-center">
+                <div class="text-2xl mb-1">🚗</div>
+                <strong class="text-alphagen-purple block">Self-Driving Cars</strong>
+                <span class="text-alphagen-darkGrey text-[11px]">Detecting lanes, signs &amp; pedestrians</span>
+              </div>
+              <div class="bg-white p-3 rounded-2xl border border-alphagen-purplePale shadow-sm text-center">
+                <div class="text-2xl mb-1">🏥</div>
+                <strong class="text-alphagen-purple block">Medical Scans</strong>
+                <span class="text-alphagen-darkGrey text-[11px]">Spotting patterns in X-rays &amp; MRIs</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white border border-alphagen-purplePale p-2.5 rounded-xl text-xs font-bold text-alphagen-purple text-center mt-3">
+            To a computer, every picture is just a grid of tiny colored dots called <strong>Pixels</strong>!
+          </div>
+        </div>
+
+        <!-- Interactive Pixel Inspector (5 cols) -->
+        <div class="col-span-5 bg-slate-900 border-2 border-slate-800 rounded-3xl p-5 text-white flex flex-col justify-between shadow-xl">
+          <div>
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-3">
+              <span class="text-xs font-mono text-alphagen-yellow font-bold uppercase">HOW COMPUTERS SEE IMAGES</span>
+              <span class="text-[11px] font-mono text-emerald-400">BGR / RGB PIXELS</span>
+            </div>
+
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-center space-y-3">
+              <div id="vision-preview-box" class="h-36 rounded-xl bg-gradient-to-tr from-purple-900 to-indigo-800 border border-slate-700 flex flex-col items-center justify-center transition-all">
+                <span class="text-4xl mb-1" id="vision-emoji">🍎</span>
+                <span class="text-xs font-mono text-alphagen-cyan font-bold" id="vision-label">Human View: Red Apple</span>
+              </div>
+
+              <div class="flex gap-2 justify-center">
+                <button onclick="toggleVisionMode('human')" class="btn-interactive bg-alphagen-purple text-white text-xs font-bold px-3.5 py-1.5 rounded-xl">Human Eyes</button>
+                <button onclick="toggleVisionMode('matrix')" class="btn-interactive bg-alphagen-yellow text-alphagen-nearBlack text-xs font-bold px-3.5 py-1.5 rounded-xl">Computer Pixel Matrix</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-black/60 p-2.5 rounded-xl border border-slate-800 text-center text-xs font-mono text-alphagen-yellow">
+            OpenCV reads images as grids of numbers!
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SLIDE 3: AGENDA ================= -->
+    <div id="slide-3" class="slide-panel bg-white justify-between">
+      <div>
+        <span class="text-xs uppercase font-extrabold tracking-wider text-alphagen-purple bg-alphagen-purpleGhost px-4 py-1.5 rounded-md border border-alphagen-purplePale">Lesson Roadmap</span>
+        <h2 class="text-3xl font-extrabold text-alphagen-purple mt-2">Today's Computer Vision Agenda</h2>
+       
+      </div>
+
+      <div class="grid grid-cols-3 gap-6 my-auto items-stretch">
+        <!-- Step 1 -->
+        <div class="bg-alphagen-purpleGhost border-2 border-alphagen-purplePale rounded-3xl p-6 flex flex-col justify-between shadow-sm">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-alphagen-purple text-white font-extrabold text-xl flex items-center justify-center mb-4 shadow">1</div>
+            <h3 class="font-extrabold text-xl text-alphagen-purple mb-2">Installing the Library</h3>
+            
+          </div>
+          
+        </div>
+
+        <!-- Step 2 -->
+        <div class="bg-alphagen-yellowPale/60 border-2 border-alphagen-yellowDark rounded-3xl p-6 flex flex-col justify-between shadow-sm">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-alphagen-yellow text-alphagen-nearBlack font-extrabold text-xl flex items-center justify-center mb-4 shadow">2</div>
+            <h3 class="font-extrabold text-xl text-alphagen-nearBlack mb-2">Basics of Computer Vision</h3>
+            
+          </div>
+         
+        </div>
+
+        <!-- Step 3 -->
+        <div class="bg-slate-900 border-2 border-slate-800 rounded-3xl p-6 text-white flex flex-col justify-between shadow-lg">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-alphagen-cyan text-alphagen-nearBlack font-extrabold text-xl flex items-center justify-center mb-4 shadow">3</div>
+            <h3 class="font-extrabold text-xl text-alphagen-yellow mb-2">Reading, Writing &amp; Saving Images</h3>
+            
+          </div>
+          
+        </div>
+      </div>
+
+     
+    </div>
+
+    <!-- ================= SLIDE 4: INSTALLING OPENCV (CONCISE MAC & WINDOWS) ================= -->
+    <div id="slide-4" class="slide-panel bg-white justify-between">
+      <div>
+        <span class="text-xs uppercase font-extrabold tracking-wider text-alphagen-purple bg-alphagen-purpleGhost px-4 py-1.5 rounded-md border border-alphagen-purplePale">Environment Setup</span>
+        <h2 class="text-3xl font-extrabold text-alphagen-purple mt-1">Installing OpenCV: MacBook vs. Windows</h2>
+      </div>
+
+      <div class="grid grid-cols-2 gap-6 my-auto items-stretch">
+        <!-- LEFT WINDOW: MACBOOK (Concise) -->
+        <div class="bg-slate-900 border-2 border-slate-800 rounded-3xl p-5 text-white flex flex-col justify-between shadow-xl">
+          <div>
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
+              <span class="text-xs font-mono text-alphagen-cyan font-bold"><i class="fa-brands fa-apple mr-1.5"></i> MacBook (Terminal)</span>
+              <span class="text-[10px] font-mono text-slate-400">macOS</span>
+            </div>
+
+            <ul class="space-y-2 text-xs text-slate-200 mb-3">
+              <li><strong>1.</strong> Open <strong>Terminal</strong> (<kbd class="bg-slate-800 px-1.5 py-0.5 rounded font-mono text-[11px]">Cmd + Space</kbd>)</li>
+              <li><strong>2.</strong> Run the install command:</li>
+            </ul>
+
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 font-mono text-xs space-y-2">
+              <div class="text-emerald-400 font-bold">$ pip3 install opencv-python</div>
+              <div class="text-slate-500 text-[11px]"># Verify setup:</div>
+              <div class="text-yellow-300">$ python3 -c "import cv2"</div>
+            </div>
+          </div>
+
+          <div class="bg-slate-950/90 p-2.5 rounded-xl border border-slate-800 text-[11px] text-slate-300 mt-2">
+            Use <code class="text-alphagen-cyan font-mono font-bold">pip3</code> on Mac so OpenCV installs directly into Python 3.
+          </div>
+        </div>
+
+        <!-- RIGHT WINDOW: WINDOWS (Concise Command Prompt + IDLE Path) -->
+        <div class="bg-slate-900 border-2 border-slate-800 rounded-3xl p-5 text-white flex flex-col justify-between shadow-xl">
+          <div>
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
+              <span class="text-xs font-mono text-alphagen-yellow font-bold"><i class="fa-brands fa-windows mr-1.5"></i> Windows (Command Prompt)</span>
+              <span class="text-[10px] font-mono text-slate-400">cmd.exe</span>
+            </div>
+
+            <ul class="space-y-2 text-xs text-slate-200 mb-3">
+              <li><strong>1.</strong> Find <strong>Python IDLE</strong> folder ➔ Copy its path (or <code class="font-mono text-yellow-300">Scripts</code> folder)</li>
+              <li><strong>2.</strong> Open <strong>Command Prompt</strong>, run <code class="font-mono text-cyan-300">cd &lt;path&gt;</code> &amp; install:</li>
+            </ul>
+
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 font-mono text-xs space-y-2">
+              <div class="text-cyan-300">C:\&gt; cd C:\Users\Name\...\Python312\Scripts</div>
+              <div class="text-emerald-400 font-bold">C:\...\Scripts&gt; pip install opencv-python</div>
+            </div>
+          </div>
+
+          <div class="bg-slate-950/90 p-2.5 rounded-xl border border-slate-800 text-[11px] text-amber-300 mt-2">
+            Tip: Type <code class="font-mono text-white">cmd</code> in the File Explorer address bar to open right inside that path!
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPACT TROUBLESHOOTING NOTE: IF PIP IS NOT INSTALLED -->
+      <div class="bg-alphagen-coralPale border-2 border-alphagen-coral rounded-2xl px-4 py-2.5 flex items-center justify-between gap-4 text-xs">
+        <div class="flex items-center gap-2 text-alphagen-coralDark font-extrabold shrink-0">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>If "pip" is not installed / recognized:</span>
+        </div>
+        <div class="flex gap-4 text-[11px] font-semibold text-alphagen-nearBlack">
+          <span><strong>1.</strong> Try <code class="font-mono bg-white px-1.5 py-0.5 rounded border border-rose-200 text-purple-700">python -m pip install opencv-python</code></span>
+          <span><strong>2.</strong> Or run <code class="font-mono bg-white px-1.5 py-0.5 rounded border border-rose-200 text-purple-700">python -m ensurepip --upgrade</code></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SLIDE 5: READ & SHOW AN IMAGE ================= -->
+    <div id="slide-5" class="slide-panel bg-white justify-between">
+      <div>
+        <span class="text-xs uppercase font-extrabold tracking-wider text-alphagen-purple bg-alphagen-purpleGhost px-4 py-1.5 rounded-md border border-alphagen-purplePale">Foundation Step 1</span>
+        <h2 class="text-3xl font-extrabold text-alphagen-purple mt-1">Reading &amp; Showing an Image File</h2>
+       
+      </div>
+
+      <div class="grid grid-cols-12 gap-6 my-auto items-stretch">
+        <!-- Left: 3-Step Visual Workflow & Code (7 cols) -->
+        <div class="col-span-7 bg-slate-900 border-2 border-slate-800 rounded-3xl p-5 text-white flex flex-col justify-between shadow-xl">
+          <div>
+            <!-- 3 Mini Visual Cards -->
+            <div class="grid grid-cols-3 gap-2.5 mb-3 text-xs font-sans">
+              <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                <span class="text-[10px] font-mono text-alphagen-yellow font-bold block">STEP 1: STORE</span>
+                <strong class="text-white block mt-0.5">Save in Same Folder</strong>
+                <span class="text-[11px] text-slate-400">Put image beside your <code class="text-cyan-300 font-mono">.py</code> file.</span>
+              </div>
+              <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                <span class="text-[10px] font-mono text-alphagen-cyan font-bold block">STEP 2: READ</span>
+                <strong class="text-white block mt-0.5">Load via cv2.imread()</strong>
+                <span class="text-[11px] text-slate-400">Store image in variable <code class="text-yellow-300 font-mono">img</code>.</span>
+              </div>
+              <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                <span class="text-[10px] font-mono text-emerald-400 font-bold block">STEP 3: SHOW</span>
+                <strong class="text-white block mt-0.5">Display via cv2.imshow()</strong>
+                <span class="text-[11px] text-slate-400">Pass window title + variable.</span>
+              </div>
+            </div>
+
+            <!-- Code Block -->
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 font-mono text-xs leading-relaxed space-y-1.5">
+              <div><span class="text-purple-400 font-bold">import</span> <span class="text-cyan-300 font-bold">cv2</span></div>
+              <div class="text-slate-500 pt-1"># Step 2: Read image from the same folder into a variable</div>
+              <div>img = cv2.<span class="text-yellow-300 font-bold">imread</span>(<span class="text-emerald-300">"cat.jpg"</span>)</div>
+              <div class="text-slate-500 pt-1"># Step 3: Show image in a popup window (Window Name, Variable)</div>
+              <div>cv2.<span class="text-yellow-300 font-bold">imshow</span>(<span class="text-emerald-300">"My First OpenCV Window"</span>, img)</div>
+              <div class="text-slate-500 pt-1"># Keep window open until a key is pressed</div>
+              <div>cv2.<span class="text-cyan-300">waitKey</span>(<span class="text-amber-300">0</span>)</div>
+              <div>cv2.<span class="text-cyan-300">destroyAllWindows</span>()</div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between bg-black/60 p-2 rounded-xl border border-slate-800 mt-2">
+            <span class="text-[11px] text-slate-400 font-mono">Test Run Preview:</span>
+            <button onclick="simulateShowImage()" class="btn-interactive bg-alphagen-yellow text-alphagen-nearBlack font-bold text-xs px-4 py-1.5 rounded-lg flex items-center gap-1.5">
+              <i class="fa-solid fa-play"></i> Run &amp; Show Window
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Student Code Checklist (NO CODE REPEATED HERE) (5 cols) -->
+        <div class="col-span-5 bg-alphagen-purpleGhost border-2 border-alphagen-purplePale rounded-3xl p-5 flex flex-col justify-between">
+          <div>
+            <h3 class="font-extrabold text-xs text-alphagen-purple uppercase tracking-wider mb-3">
+              <i class="fa-solid fa-list-check mr-1.5"></i> Student Code Checklist
+            </h3>
+
+            <div class="space-y-3 text-xs md:text-sm">
+              <div class="checkbox-card" id="rs-chk-1" onclick="toggleChecklist('rs-chk-1', 'readshow')">
+                <div class="checkbox-box"><i class="fa-solid fa-check"></i></div>
+                <span class="font-bold text-alphagen-nearBlack">1. Store an image file inside your project folder</span>
+              </div>
+
+              <div class="checkbox-card" id="rs-chk-2" onclick="toggleChecklist('rs-chk-2', 'readshow')">
+                <div class="checkbox-box"><i class="fa-solid fa-check"></i></div>
+                <span class="font-bold text-alphagen-nearBlack">2. Import the library and read the image into a variable</span>
+              </div>
+
+              <div class="checkbox-card" id="rs-chk-3" onclick="toggleChecklist('rs-chk-3', 'readshow')">
+                <div class="checkbox-box"><i class="fa-solid fa-check"></i></div>
+                <span class="font-bold text-alphagen-nearBlack">3. Display the image window and wait for a key press</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="readshow-output-box" class="mt-3 p-3 bg-white border border-alphagen-purplePale rounded-2xl text-xs font-bold text-alphagen-purple text-center">
+            Progress: <span id="readshow-count" class="text-alphagen-yellowDark font-extrabold">0 / 3</span> Completed
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SLIDE 6: WRITING & SAVING AN IMAGE ================= -->
+    <div id="slide-6" class="slide-panel bg-white justify-between">
+      <div>
+        <span class="text-xs uppercase font-extrabold tracking-wider text-alphagen-purple bg-alphagen-purpleGhost px-4 py-1.5 rounded-md border border-alphagen-purplePale">Foundation Step 2</span>
+        <h2 class="text-3xl font-extrabold text-alphagen-purple mt-1">Writing &amp; Saving Images + Finding Folder Paths</h2>
+     
+      </div>
+
+      <div class="grid grid-cols-12 gap-6 my-auto items-stretch">
+        <!-- Left: Code for Writing & Saving + Path Guide (7 cols) -->
+        <div class="col-span-7 bg-slate-900 border-2 border-slate-800 rounded-3xl p-5 text-white flex flex-col justify-between shadow-xl">
+          <div>
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-2.5">
+              <span class="text-xs font-mono text-alphagen-yellow font-bold uppercase">WRITE &amp; SAVE IMAGE CODE</span>
+              <span class="text-[11px] font-mono text-emerald-400">cv2.imwrite(filename, img)</span>
+            </div>
+
+            <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 font-mono text-xs leading-relaxed space-y-1.5 mb-3">
+              <div><span class="text-purple-400 font-bold">import</span> <span class="text-cyan-300 font-bold">cv2</span></div>
+              <div class="text-slate-500"># 1. Read original image (using full path or same folder)</div>
+              <div>img = cv2.<span class="text-yellow-300 font-bold">imread</span>(<span class="text-emerald-300">r"C:\Users\Student\Pictures\cat.jpg"</span>)</div>
+              <div class="text-slate-500 pt-1"># 2. Write &amp; save a new image file into your folder</div>
+              <div>cv2.<span class="text-yellow-300 font-bold">imwrite</span>(<span class="text-emerald-300">"saved_cat_copy.png"</span>, img)</div>
+              <div><span class="text-cyan-300">print</span>(<span class="text-emerald-300">"Image saved successfully!"</span>)</div>
+            </div>
+
+            <!-- How to Find File Path Guide -->
+            <div class="bg-slate-950/90 p-3 rounded-2xl border border-slate-800 text-xs font-sans space-y-1.5">
+              <div class="text-alphagen-cyan font-extrabold flex items-center gap-1.5">
+                <i class="fa-solid fa-folder-open text-alphagen-yellow"></i>
+                <span>How to Find an Image's Full Path:</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-300">
+                <div class="bg-slate-900 p-2 rounded-xl border border-slate-800">
+                  <strong class="text-alphagen-yellow block"><i class="fa-brands fa-windows mr-1"></i> Windows:</strong>
+                  Right-click image ➔ <strong>"Copy as path"</strong> (or Shift + Right-Click). Add <code class="text-cyan-300 font-mono">r</code> before quotes!
+                </div>
+                <div class="bg-slate-900 p-2 rounded-xl border border-slate-800">
+                  <strong class="text-alphagen-cyan block"><i class="fa-brands fa-apple mr-1"></i> MacBook:</strong>
+                  Right-click image ➔ Hold <strong>Option (⌥)</strong> key ➔ Click <strong>"Copy ... as Pathname"</strong>.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Clean Write & Save Checklist (NO PATHS, NO CODE, NO SIMULATION BUTTON) (5 cols) -->
+        <div class="col-span-5 bg-alphagen-purpleGhost border-2 border-alphagen-purplePale rounded-3xl p-5 flex flex-col justify-between">
+          <div>
+            <h3 class="font-extrabold text-xs text-alphagen-purple uppercase tracking-wider mb-3">
+              <i class="fa-solid fa-list-check mr-1.5"></i> Write &amp; Save Checklist
+            </h3>
+
+            <div class="space-y-3 text-xs md:text-sm">
+              <div class="checkbox-card" id="ws-chk-1" onclick="toggleChecklist('ws-chk-1', 'writesave')">
+                <div class="checkbox-box"><i class="fa-solid fa-check"></i></div>
+                <span class="font-bold text-alphagen-nearBlack">1. Locate your image file and copy its folder location</span>
+              </div>
+
+              <div class="checkbox-card" id="ws-chk-2" onclick="toggleChecklist('ws-chk-2', 'writesave')">
+                <div class="checkbox-box"><i class="fa-solid fa-check"></i></div>
+                <span class="font-bold text-alphagen-nearBlack">2. Read the original image into your Python script</span>
+              </div>
+
+              <div class="checkbox-card" id="ws-chk-3" onclick="toggleChecklist('ws-chk-3', 'writesave')">
+                <div class="checkbox-box"><i class="fa-solid fa-check"></i></div>
+                <span class="font-bold text-alphagen-nearBlack">3. Write and save a new copy inside your project folder</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="writesave-output-box" class="mt-2 p-3 bg-white border border-alphagen-purplePale rounded-2xl text-xs font-bold text-alphagen-purple text-center">
+            Progress: <span id="writesave-count" class="text-alphagen-yellowDark font-extrabold">0 / 3</span> Completed
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SLIDE 7: FINAL QUIZ & CELEBRATE ================= -->
+    <div id="slide-7" class="slide-panel bg-white justify-between">
+      <div>
+        <span class="text-xs uppercase font-extrabold tracking-wider text-alphagen-purple bg-alphagen-purpleGhost px-4 py-1.5 rounded-md border border-alphagen-purplePale">Final Knowledge Check</span>
+        <h2 class="text-3xl font-extrabold text-alphagen-purple mt-1">Knowledge Check</h2>
+      </div>
+
+      <div class="space-y-3 my-auto">
+        <!-- Question 1: Import Syntax -->
+        <div class="bg-alphagen-purpleGhost border-2 border-alphagen-purplePale p-3.5 rounded-2xl flex items-center justify-between gap-4">
+          <div class="max-w-md">
+            <h4 class="font-extrabold text-sm text-alphagen-nearBlack">1. What is the correct syntax to import the OpenCV library in Python?</h4>
+           
+          </div>
+          <div class="flex gap-2 shrink-0">
+            <button onclick="checkFinalQuiz(this, true)" class="quiz-option px-4 py-2 font-mono">import cv2</button>
+            <button onclick="checkFinalQuiz(this, false)" class="quiz-option px-4 py-2 font-mono">import opencv-python</button>
+            <button onclick="checkFinalQuiz(this, false)" class="quiz-option px-4 py-2 font-mono">include cv2</button>
+          </div>
+        </div>
+
+        <!-- Question 2: imread with variable vs without variable -->
+        <div class="bg-alphagen-purpleGhost border-2 border-alphagen-purplePale p-3.5 rounded-2xl flex items-center justify-between gap-4">
+          <div class="max-w-md">
+            <h4 class="font-extrabold text-sm text-alphagen-nearBlack">2. Which <code class="font-mono text-purple-700">imread()</code> syntax properly stores the image so you can use it later?</h4>
+           
+          </div>
+          <div class="flex gap-2 shrink-0">
+            <button onclick="checkFinalQuiz(this, false)" class="quiz-option px-4 py-2 font-mono">cv2.imread("photo.jpg")</button>
+            <button onclick="checkFinalQuiz(this, true)" class="quiz-option px-4 py-2 font-mono">img = cv2.imread("photo.jpg")</button>
+          </div>
+        </div>
+
+        <!-- Question 3: imshow with window name vs without window name -->
+        <div class="bg-alphagen-purpleGhost border-2 border-alphagen-purplePale p-3.5 rounded-2xl flex items-center justify-between gap-4">
+          <div class="max-w-md">
+            <h4 class="font-extrabold text-sm text-alphagen-nearBlack">3. Which <code class="font-mono text-purple-700">imshow()</code> syntax is valid for displaying an image?</h4>
+           
+          </div>
+          <div class="flex gap-2 shrink-0">
+            <button onclick="checkFinalQuiz(this, true)" class="quiz-option px-4 py-2 font-mono">cv2.imshow("My Window", img)</button>
+            <button onclick="checkFinalQuiz(this, false)" class="quiz-option px-4 py-2 font-mono">cv2.imshow(img)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grand Celebration Button -->
+      <div>
+        <button onclick="triggerGrandCelebration()" class="w-full bg-alphagen-yellow hover:bg-alphagen-yellowDark text-alphagen-nearBlack font-extrabold py-3.5 rounded-2xl text-base btn-interactive shadow-lg flex items-center justify-center gap-3">
+          <i class="fa-solid fa-trophy text-alphagen-purple text-xl"></i>
+          <span>Celebrate </span>
+          <span>🎉</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Navigation Control Bar -->
+  <div class="nav-bar">
+    <button id="prev-btn" class="nav-btn btn-interactive" onclick="prevSlide()" disabled>
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>Previous</span>
+    </button>
+
+    <span class="text-xs font-semibold text-white/90">
+      Use Arrow Keys (← / →) or buttons to navigate slides
+    </span>
+
+    <button id="next-btn" class="nav-btn btn-interactive" onclick="handleNextOrFinish()">
+      <span id="next-btn-text">Next</span>
+      <i id="next-btn-icon" class="fa-solid fa-arrow-right"></i>
+    </button>
+  </div>
+</div>
+
+<!-- ================= JAVASCRIPT SYSTEM ================= -->
+<script>
+let currentSlide = 1;
+const totalSlides = 7;
+let soundEnabled = true;
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+/* Web Audio Synthesizer */
+function playSound(type) {
+  if (!soundEnabled) return;
+  try {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.connect(g);
+    g.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
+
+    if (type === 'correct') {
+      o.type = 'sine';
+      o.frequency.setValueAtTime(523, now);
+      o.frequency.exponentialRampToValueAtTime(659, now + 0.15);
+      g.gain.setValueAtTime(0.1, now);
+      g.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      o.start();
+      o.stop(now + 0.3);
+    } else if (type === 'wrong') {
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(180, now);
+      o.frequency.linearRampToValueAtTime(110, now + 0.2);
+      g.gain.setValueAtTime(0.1, now);
+      g.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+      o.start();
+      o.stop(now + 0.25);
+    } else {
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(360, now);
+      o.frequency.exponentialRampToValueAtTime(720, now + 0.08);
+      g.gain.setValueAtTime(0.1, now);
+      g.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+      o.start();
+      o.stop(now + 0.08);
+    }
+  } catch (e) {}
+}
+
+function toggleAudio() {
+  soundEnabled = !soundEnabled;
+  const iconHtml = soundEnabled ? '<i class="fa-solid fa-volume-high"></i>' : '<i class="fa-solid fa-volume-xmark"></i>';
+  const topAudioBtn = document.getElementById('top-audio-btn');
+  const stageAudioBtn = document.getElementById('audio-btn');
+  if (topAudioBtn) topAudioBtn.innerHTML = soundEnabled ? '<i class="fa-solid fa-volume-high text-base"></i>' : '<i class="fa-solid fa-volume-xmark text-base"></i>';
+  if (stageAudioBtn) stageAudioBtn.innerHTML = iconHtml;
+}
+
+/* Confetti Celebrations */
+function triggerSuccessConfetti() {
+  playSound('correct');
+  if (typeof confetti === 'function') {
+    confetti({ particleCount: 75, spread: 60, origin: { y: 0.6 } });
+  }
+}
+
+function triggerGrandCelebration() {
+  playSound('correct');
+  if (typeof confetti === 'function') {
+    confetti({
+      particleCount: 150,
+      spread: 90,
+      origin: { y: 0.5 },
+      colors: ['#5E48C4', '#FFD071', '#59E4FB', '#ED5661', '#10B981']
+    });
+    setTimeout(() => {
+      confetti({ particleCount: 90, angle: 60, spread: 55, origin: { x: 0 } });
+      confetti({ particleCount: 90, angle: 120, spread: 55, origin: { x: 1 } });
+    }, 250);
+  }
+}
+
+/* Navigation System */
+function initHeaderDots() {
+  const c = document.getElementById('header-dots-container');
+  if (!c) return;
+  c.innerHTML = '';
+  for (let i = 1; i <= totalSlides; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot-indicator ' + (i === 1 ? 'active' : '');
+    d.onclick = () => goToSlide(i);
+    c.appendChild(d);
+  }
+}
+
+function updateSlideDisplay() {
+  document.querySelectorAll('.slide-panel').forEach((p, i) => p.classList.toggle('active', i + 1 === currentSlide));
+  document.querySelectorAll('.dot-indicator').forEach((d, i) => d.classList.toggle('active', i + 1 === currentSlide));
+
+  const counterPill = document.getElementById('slide-counter-pill');
+  const dropdown = document.getElementById('slide-dropdown');
+  const prevBtn = document.getElementById('prev-btn');
+  const nextBtn = document.getElementById('next-btn');
+  const nextBtnText = document.getElementById('next-btn-text');
+  const nextBtnIcon = document.getElementById('next-btn-icon');
+
+  if (counterPill) counterPill.innerText = `Slide ${currentSlide} / ${totalSlides}`;
+  if (dropdown) dropdown.value = currentSlide;
+  if (prevBtn) prevBtn.disabled = currentSlide === 1;
+
+  if (nextBtn && nextBtnText && nextBtnIcon) {
+    if (currentSlide === totalSlides) {
+      nextBtnText.innerText = 'Finish';
+      nextBtnIcon.className = 'fa-solid fa-flag-checkered';
+      nextBtn.classList.add('finish-btn');
+    } else {
+      nextBtnText.innerText = 'Next';
+      nextBtnIcon.className = 'fa-solid fa-arrow-right';
+      nextBtn.classList.remove('finish-btn');
+    }
+  }
+}
+
+function handleNextOrFinish() {
+  if (currentSlide === totalSlides) {
+    triggerGrandCelebration();
+  } else {
+    nextSlide();
+  }
+}
+
+function nextSlide() {
+  if (currentSlide < totalSlides) {
+    currentSlide++;
+    updateSlideDisplay();
+    playSound('pop');
+  }
+}
+
+function prevSlide() {
+  if (currentSlide > 1) {
+    currentSlide--;
+    updateSlideDisplay();
+    playSound('pop');
+  }
+}
+
+function goToSlide(n) {
+  if (n >= 1 && n <= totalSlides) {
+    currentSlide = n;
+    updateSlideDisplay();
+    playSound('pop');
+  }
+}
+
+function fitStageToScreen() {
+  const stage = document.querySelector('.slide-stage');
+  const nav = document.querySelector('.nav-bar');
+  if (!stage) return;
+  const availableWidth = window.innerWidth - 32;
+  if (availableWidth < 1280) {
+    const scale = availableWidth / 1280;
+    stage.style.transform = `scale(${scale})`;
+    stage.style.marginBottom = `-${720 * (1 - scale)}px`;
+    if (nav) nav.style.transform = `scale(${scale})`;
+  } else {
+    stage.style.transform = 'none';
+    stage.style.marginBottom = '0px';
+    if (nav) nav.style.transform = 'none';
+  }
+}
+
+/* SLIDE 2: PIXEL MATRIX TOGGLE */
+function toggleVisionMode(mode) {
+  playSound('pop');
+  const box = document.getElementById('vision-preview-box');
+  const emoji = document.getElementById('vision-emoji');
+  const label = document.getElementById('vision-label');
+  if (!box || !emoji || !label) return;
+
+  if (mode === 'human') {
+    box.className = 'h-36 rounded-xl bg-gradient-to-tr from-purple-900 to-indigo-800 border border-slate-700 flex flex-col items-center justify-center transition-all';
+    emoji.innerText = '🍎';
+    emoji.className = 'text-4xl mb-1';
+    label.innerText = 'Human View: Red Apple';
+  } else {
+    box.className = 'h-36 rounded-xl bg-black border border-emerald-500 flex flex-col items-center justify-center transition-all px-3';
+    emoji.innerText = '[[25, 30, 220], [18, 22, 240],\n [32, 40, 215], [10, 15, 255]]';
+    emoji.className = 'text-xs font-mono text-emerald-400 mb-1 whitespace-pre leading-tight';
+    label.innerText = 'Computer View: BGR Number Grid!';
+  }
+}
+
+/* SLIDE 5: READ & SHOW SIMULATOR */
+function simulateShowImage() {
+  triggerSuccessConfetti();
+  const box = document.getElementById('readshow-output-box');
+  if (box) {
+    box.className = 'mt-3 p-3 bg-slate-900 border-2 border-emerald-400 rounded-2xl text-xs text-white text-center shadow-lg';
+    box.innerHTML = `
+      <div class="flex items-center justify-between bg-slate-800 px-2.5 py-1 rounded-t-lg text-[10px] font-mono text-alphagen-cyan mb-1">
+        <span>🖼️ My First OpenCV Window</span>
+        <span>[ — ][ □ ][ × ]</span>
+      </div>
+      <div class="py-1.5 text-2xl">🐱</div>
+      <div class="text-[11px] text-emerald-400 font-bold">Image loaded &amp; displayed! Press any key to close.</div>
+    `;
+  }
+}
+
+/* CHECKLIST TOGGLER */
+function toggleChecklist(cardId, group) {
+  playSound('pop');
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  card.classList.toggle('checked');
+
+  if (group === 'readshow') {
+    const checked = [1, 2, 3].filter(n => document.getElementById(`rs-chk-${n}`)?.classList.contains('checked')).length;
+    const cEl = document.getElementById('readshow-count');
+    if (cEl) cEl.innerText = `${checked} / 3`;
+    if (checked === 3) triggerSuccessConfetti();
+  } else if (group === 'writesave') {
+    const checked = [1, 2, 3].filter(n => document.getElementById(`ws-chk-${n}`)?.classList.contains('checked')).length;
+    const cEl = document.getElementById('writesave-count');
+    if (cEl) cEl.innerText = `${checked} / 3`;
+    if (checked === 3) triggerSuccessConfetti();
+  }
+}
+
+/* SLIDE 7: FINAL QUIZ */
+function checkFinalQuiz(btn, isCorrect) {
+  const row = btn.parentElement;
+  row.querySelectorAll('.quiz-option').forEach(b => b.classList.remove('selected-correct', 'selected-wrong'));
+
+  if (isCorrect) {
+    btn.classList.add('selected-correct');
+    playSound('correct');
+  } else {
+    btn.classList.add('selected-wrong');
+    playSound('wrong');
+  }
+}
+
+/* Global Listeners & Keyboard Hook */
+document.addEventListener('keydown', e => {
+  if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+  if (e.key === 'ArrowRight') handleNextOrFinish();
+  if (e.key === 'ArrowLeft') prevSlide();
+});
+
+window.addEventListener('resize', fitStageToScreen);
+
+window.addEventListener('DOMContentLoaded', () => {
+  currentSlide = 1;
+  initHeaderDots();
+  updateSlideDisplay();
+  fitStageToScreen();
+});
+</script>
+</body>
+</html>
